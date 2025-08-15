@@ -1,15 +1,44 @@
 #include "driver/uart.h"
 
-struct Data {
-  int8_t Values_1[4];
-  int8_t Values_2[4];
-} message;
+typedef struct __attribute__((packed)) {
+  uint8_t Header[2];
+
+  union {
+    uint8_t moveBtnByte;
+    struct {
+      uint8_t move1 : 1;
+      uint8_t move2 : 1;
+      uint8_t move3 : 1;
+      uint8_t move4 : 1;
+      uint8_t res1 : 2;
+      uint8_t set1 : 1;
+      uint8_t set2 : 1;
+    } moveBtnBit;
+  };
+
+  union {
+    uint8_t attackBtnByte;
+    struct {
+      uint8_t attack1 : 1;
+      uint8_t attack2 : 1;
+      uint8_t attack3 : 1;
+      uint8_t attack4 : 1;
+      uint8_t res1 : 4;
+    } attackBtnBit;
+  };
+
+  int8_t stickValue[4];  //joyL_X,joyL_Y ,joyR_X,joyR_Y
+
+} ControllerData;
+
+ControllerData data;
+
 
 long TIME = 0;
 
-#define UART_PORT UART_NUM_1  // ใช้ UART1
-#define TXD_PIN 12
-#define RXD_PIN 13
+#define UART_PORT UART_NUM_2  // ใช้ UART1
+#define TXD_PIN 5
+#define RXD_PIN 15
 #define BUF_SIZE 1024
 
 void setup() {
@@ -29,13 +58,14 @@ void setup() {
 
 void loop() {
   if ((millis() - TIME) > 100) {
-    for (uint8_t i = 0; i < 4; i++) {
-      message.Values_1[i] = 50;
-      message.Values_2[i] = random(-128, 127);
-    }
+    data.moveBtnBit.move1 = 1;
+    data.moveBtnBit.move3 = 1;
+
+    data.stickValue[0] = random(-128,127);
+    data.stickValue[2] = random(-128,127);
 
     // ส่งข้อมูลผ่าน UART1
-    uart_write_bytes(UART_PORT, (uint8_t *)&message, sizeof(message));
+    uart_write_bytes(UART_PORT, (uint8_t *)&data, sizeof(data));
 
     Serial.println("Send via UART1");  // debug log
 
